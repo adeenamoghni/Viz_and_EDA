@@ -1,0 +1,125 @@
+---
+title: "Data Visualization"
+output: github_document
+date: "2024-09-26"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggridges)
+```
+
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728", "USW00022534", "USS0023B17S"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2021-01-01",
+    date_max = "2022-12-31") %>% 
+  mutate(
+    name = case_match(
+      id, 
+      "USW00094728" ~ "CentralPark_NY", 
+      "USW00022534" ~ "Molokai_HI",
+      "USS0023B17S" ~ "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>% 
+  select(name, id, everything())
+```
+
+Making our first plot
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point()
+```
+
+```{r}
+weather_df %>% 
+ggplot(aes(x = tmin, y = tmax)) + 
+  geom_point()
+```
+
+```{r}
+gg_weather_scatterplot = 
+  ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point() #To save the scatterplot
+
+weather_df %>% 
+  filter(is.na(tmax)) #to tell you if there are any missing values
+```
+
+```{r}
+weather_df %>% 
+ggplot(aes(x = tmin, y = tmax, color = name)) + 
+  geom_point(alpha = .3, size = .8) + # alpha makes point more transparent, size makes points smaller
+  geom_smooth(se = FALSE) + #adds a smooth curve through the points, se = false will prevent automatic standard error calcs
+  facet_grid(. ~ name) #seperates into 3 scatter plots
+  
+```
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x = date, y = tmax, color = name, size = prcp)) +
+  geom_point() +
+  geom_smooth() +
+  facet_grid(. ~ name)
+```
+
+```{r}
+weather_df %>% 
+  filter(name == "CentralPark_NY") %>% 
+  mutate(
+    tmin_f = (tmin * (9/5)) + 32,
+    tmax_f = (tmax * (9/5)) + 32
+  ) %>% 
+    ggplot(aes(x = tmin_f, tmax_f)) + 
+    geom_point() + 
+    geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_hex()
+```
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_point(color = "blue")
+```
+
+##Univariate data
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x = tmin, fill = name)) + #fills bars with diff colors based onlocation name
+  geom_histogram(position = "dodge") #puts bars next to each instead of on top
+```
+
+##Density Plot/ Box Plot/ Ridge Plot
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x = tmin, fill = name)) +
+  geom_density(alpha = .3)
+```
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x = name, y= tmin, fill = name)) +
+  geom_boxplot()
+```
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x = name, y= tmin, fill = name)) +
+  geom_violin()
+```
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x = tmin, y= name, fill = name)) +
+  geom_density_ridges()
+```
