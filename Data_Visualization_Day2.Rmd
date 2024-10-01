@@ -7,9 +7,11 @@ date: "2024-09-26"
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(ggridges)
+library(patchwork)
+library(haven) #read SAS
 ```
 
-```{r}
+```{r echo = FALSE}
 weather_df = 
   rnoaa::meteo_pull_monitors(
     c("USW00094728", "USW00022534", "USS0023B17S"),
@@ -27,7 +29,7 @@ weather_df =
   select(name, id, everything())
 ```
 
-```{r}
+```{r echo = FALSE}
 weather_df %>% 
   ggplot(aes(x = tmin, y = tmax, color = name)) + 
   geom_point(alpha = .3) + 
@@ -42,7 +44,8 @@ weather_df %>%
 
 Scales- start out with x and y
 
-```{r}
+```{r echo = FALSE}
+weather_scatter =
 weather_df %>% 
   ggplot(aes(x = tmin, y = tmax, color = name)) + 
   geom_point(alpha = .3) + 
@@ -62,4 +65,95 @@ weather_df %>%
     transform = "sqrt"
   ) +
   viridis::scale_colour_viridis(discrete = TRUE)
+```
+
+```{r echo = FALSE}
+weather_scatter +
+  theme_bw() + #white background
+  theme(legend.position = "bottom")
+```
+
+
+```{r echo = FALSE}
+weather_scatter +
+  theme_minimal() + #no thickened axes
+  theme(legend.position = "bottom")
+```
+
+
+```{r echo = FALSE}
+weather_scatter +
+  theme_classic() + #no gridlines
+  theme(legend.position = "bottom")
+```
+
+Bonus content
+
+Usinf diff data sets in diff geoms
+
+```{r echo = FALSE}
+central_park_df =
+  weather_df %>% 
+  filter(name == "CentralPark_NY")
+
+molokai_df = 
+  weather_df %>% 
+  filter(name == "Molokai_HI")
+
+molokai_df %>% 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  geom_line(data = central_park_df)
+```
+
+
+```{r echo = FALSE}
+weather_df %>% 
+  ggplot(aes(x = date, fill = name)) +
+  geom_density() +
+  facet_grid(.~name)
+```
+
+```{r echo = FALSE}
+ggp_max_min =
+  weather_df %>% 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point(alpha = .3)
+
+ggp_density =
+  weather_df %>% 
+  ggplot(aes(x = date, fill = name)) +
+  geom_density(alpha = .3)
+
+ggp_tmax_date = 
+  weather_df %>% 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  geom_smooth(se = FALSE)
+
+(ggp_max_min + ggp_density) / ggp_tmax_date
+```
+
+## Data Manipulation
+```{r echo = FALSE}
+weather_df %>% 
+  mutate(name = fct_relevel(name, c("Molokai_HI", "Central_Park_NY", "Waterhole_WA"))) %>% 
+  ggplot(aes(x =name, y = tmax, fill = name)) +
+  geom_violin(alpha = .5)
+```
+
+```{r}
+pulse_df =
+  read_sas("data/public_pulse_data.sas7bdat") %>% 
+  janitor:: clean_names() %>% 
+  pivot_longer(
+    cols = bdi_score_bl:bdi_score_12m,
+    names_to = "visit",
+    values_to = "bdi_score",
+    names_prefix = "bdi_score_"
+  ) %>% 
+  mutate(visit= ifelse(visit == "bl", "00m", visit))
+pulse_df %>% 
+  ggplot(aes(x = visit, y = bdi_score)) +
+  geom_boxplot()
 ```
